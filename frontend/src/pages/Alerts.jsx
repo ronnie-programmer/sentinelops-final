@@ -107,6 +107,11 @@ export default function Alerts() {
                   <span className="text-[10px] text-[#8b949e]">Threat #{alert.threat_id}</span>
                 </div>
                 <p className="text-sm text-gray-300 leading-snug">{alert.message}</p>
+                {alert.summary && (
+                  <p className="text-xs text-[#8b949e] mt-1 leading-snug line-clamp-2">
+                    {alert.summary}
+                  </p>
+                )}
                 <div className="mt-2 flex items-center gap-4 text-[10px] text-[#8b949e]">
                   <span>
                     <span className="text-[#8b949e]/60">Recipient:</span>{' '}

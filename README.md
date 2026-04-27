@@ -81,6 +81,22 @@ App runs at `http://localhost:5173`. Vite proxies `/api` → `localhost:8000`.
 
 ---
 
+## Feature: AI Alert Summarizer
+
+Every alert automatically receives a concise, plain-English 2-sentence summary when it is created. The first sentence identifies what happened (threat type, affected asset, and source IP); the second sentence states the risk level and the number of indicators observed.
+
+**Environment variable:** `SUMMARIZER_PROVIDER` (default: `rule`)
+
+| Value | Behaviour |
+|-------|-----------|
+| `rule` | Built-in rule-based engine — no external dependencies, works out of the box |
+| `anthropic` | *(future)* Plug in an Anthropic Claude adapter |
+| `openai` | *(future)* Plug in an OpenAI adapter |
+
+**How to extend:** implement a class with the same interface as `RuleSummarizer` (a single `summarize(alert_type, asset_name, source_ip, indicator_count, risk_phrase) -> str` method) and return an instance of it from `get_summarizer()` in `backend/services/summarizer.py`. No other files need to change.
+
+---
+
 ## API Endpoints
 
 | Method | Path | Description |

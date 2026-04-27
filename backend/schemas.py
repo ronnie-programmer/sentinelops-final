@@ -100,6 +100,7 @@ class AlertLogOut(BaseModel):
     message: str
     recipient: Optional[str] = None
     status: str
+    summary: Optional[str] = None
     created_at: datetime
     acknowledged_at: Optional[datetime] = None
 
