@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from database import engine
 from models import Base
-from routers import alerts, assets, compliance, dashboard, intel, threats
+from routers import alerts, assets, compliance, dashboard, intel, notifications, threats
 
 Base.metadata.create_all(bind=engine)
 
@@ -32,6 +32,7 @@ app.include_router(alerts.router)
 app.include_router(assets.router)
 app.include_router(compliance.router)
 app.include_router(intel.router)
+app.include_router(notifications.router)
 
 
 @app.get("/")

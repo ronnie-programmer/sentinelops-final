@@ -7,6 +7,7 @@ import Alerts from './pages/Alerts'
 import Assets from './pages/Assets'
 import Compliance from './pages/Compliance'
 import ThreatIntel from './pages/ThreatIntel'
+import NotificationSettings from './pages/NotificationSettings'
 
 export default function App() {
   return (
@@ -22,6 +23,7 @@ export default function App() {
             <Route path="/assets" element={<Assets />} />
             <Route path="/compliance" element={<Compliance />} />
             <Route path="/intel" element={<ThreatIntel />} />
+            <Route path="/notifications" element={<NotificationSettings />} />
           </Routes>
         </main>
       </div>

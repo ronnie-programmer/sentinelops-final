@@ -81,6 +81,62 @@ App runs at `http://localhost:5173`. Vite proxies `/api` → `localhost:8000`.
 
 ---
 
+## Feature: Slack & PagerDuty Routing
+
+SentinelOps automatically dispatches alerts to Slack and PagerDuty whenever a HIGH or CRITICAL threat is created. You can also configure channels and fire test notifications from the **Notifications** settings page in the UI.
+
+### What it does
+
+- **Auto-dispatch on threat creation** — any new threat with severity HIGH or CRITICAL fires both adapters immediately after the AlertLog entry is written.
+- **Graceful no-op** — adapters check environment variables at call time. If a channel is not configured, the call returns `{status: "skipped"}` and nothing is sent.
+- **Notification log** — every dispatch attempt (sent, skipped, or error) is recorded in the `notifications` table and shown in the UI.
+- **Runtime settings** — the settings page (`/notifications`) allows toggling channels, updating webhook URLs/keys, and sending test alerts without restarting the server.
+
+### Environment variables
+
+Add these to your backend environment (Railway env vars, `.env` file, or shell export):
+
+```
+# Slack
+SLACK_ENABLED=true
+SLACK_WEBHOOK_URL=https://hooks.slack.com/services/T.../B.../...
+
+# PagerDuty
+PAGERDUTY_ENABLED=true
+PAGERDUTY_INTEGRATION_KEY=your-32-char-integration-key
+PAGERDUTY_SEVERITY_THRESHOLD=HIGH   # LOW | MEDIUM | HIGH | CRITICAL
+```
+
+### Getting a Slack webhook URL
+
+1. Go to [api.slack.com/apps](https://api.slack.com/apps) and create a new app (or use an existing one).
+2. Under **Features**, select **Incoming Webhooks** and toggle it on.
+3. Click **Add New Webhook to Workspace**, choose a channel, and authorize.
+4. Copy the generated webhook URL (starts with `https://hooks.slack.com/services/`).
+5. Set `SLACK_WEBHOOK_URL` to that URL and `SLACK_ENABLED=true`.
+
+### Getting a PagerDuty integration key
+
+1. In PagerDuty, go to **Services** and select (or create) the service that should receive SentinelOps alerts.
+2. Open the **Integrations** tab and click **Add an Integration**.
+3. Choose **Events API v2** and save.
+4. Copy the **Integration Key** shown on the integrations list.
+5. Set `PAGERDUTY_INTEGRATION_KEY` to that key and `PAGERDUTY_ENABLED=true`.
+6. Optionally set `PAGERDUTY_SEVERITY_THRESHOLD` to control the minimum severity that triggers a page (default: `HIGH`).
+
+### Test notification endpoint
+
+```
+POST /api/notifications/test
+Content-Type: application/json
+
+{ "channel": "slack" }          # or "pagerduty" or "all"
+```
+
+Response includes a `results` array showing the outcome for each channel.
+
+---
+
 ## API Endpoints
 
 | Method | Path | Description |
