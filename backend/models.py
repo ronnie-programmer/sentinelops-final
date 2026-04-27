@@ -99,6 +99,7 @@ class AlertLog(Base):
     message = Column(Text, nullable=False)
     recipient = Column(String(200), nullable=True)
     status = Column(String(20), default="Pending", nullable=False)
+    summary = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     acknowledged_at = Column(DateTime, nullable=True)
 

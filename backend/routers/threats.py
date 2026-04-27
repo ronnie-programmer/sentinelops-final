@@ -7,6 +7,7 @@ import random
 from database import get_db
 from models import Threat, AlertLog
 from schemas import ThreatCreate, ThreatUpdate, ThreatOut, AIAnalysisOut
+from services.summarizer import summarize_alert
 
 router = APIRouter(prefix="/api/threats", tags=["threats"])
 
@@ -243,6 +244,7 @@ def create_threat(threat_in: ThreatCreate, db: Session = Depends(get_db)):
             status="Pending",
         )
         db.add(alert)
+        alert.summary = summarize_alert(alert, threat)
 
     db.commit()
     db.refresh(threat)
