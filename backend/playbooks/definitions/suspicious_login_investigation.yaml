@@ -1,0 +1,20 @@
+name: "Suspicious Login Investigation"
+description: "When a suspicious login or brute force is detected, notify the security team and enrich the source IP."
+enabled: true
+is_builtin: true
+trigger:
+  type: mitre_technique_in
+  techniques:
+    - T1078
+    - T1110
+    - Brute Force
+    - Credential Stuffing
+actions:
+  - action: notify_slack
+    message: "SUSPICIOUS LOGIN: {alert_title}. Source: {alert_source_ip}. Initiating investigation."
+  - action: enrich_ioc
+    ioc_value: "{alert_source_ip}"
+    ioc_type: ip
+  - action: create_jira_ticket
+    summary: "Investigate Suspicious Login: {alert_title}"
+    priority: High

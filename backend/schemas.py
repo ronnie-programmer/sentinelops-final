@@ -232,3 +232,45 @@ class IntegrationOut(BaseModel):
 
 class IntegrationToggle(BaseModel):
     enabled: bool
+
+
+# ----- Playbook Schemas -----
+
+class PlaybookOut(BaseModel):
+    id: int
+    name: str
+    description: Optional[str] = None
+    enabled: bool
+    trigger_yaml: str
+    actions_yaml: str
+    is_builtin: bool
+    run_count: int
+    last_run_at: Optional[datetime] = None
+    created_at: datetime
+    updated_at: datetime
+    class Config:
+        from_attributes = True
+
+class PlaybookCreate(BaseModel):
+    name: str
+    description: Optional[str] = None
+    trigger_yaml: str
+    actions_yaml: str
+
+class PlaybookUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    enabled: Optional[bool] = None
+    trigger_yaml: Optional[str] = None
+    actions_yaml: Optional[str] = None
+
+class PlaybookRunOut(BaseModel):
+    id: int
+    playbook_id: int
+    triggered_by: Optional[str] = None
+    status: str
+    output: Optional[str] = None
+    started_at: datetime
+    completed_at: Optional[datetime] = None
+    class Config:
+        from_attributes = True
