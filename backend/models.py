@@ -178,3 +178,33 @@ class ComplianceReport(Base):
     alert_count = Column(Integer, default=0)
     threat_count = Column(Integer, default=0)
     error_message = Column(Text, nullable=True)
+
+
+class Playbook(Base):
+    __tablename__ = "playbooks"
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(200), nullable=False)
+    description = Column(Text, nullable=True)
+    enabled = Column(Integer, default=1)  # 0=disabled, 1=enabled
+    trigger_yaml = Column(Text, nullable=False)   # YAML string
+    actions_yaml = Column(Text, nullable=False)   # YAML string
+    is_builtin = Column(Integer, default=0)       # 1 = prebuilt, read-only
+    run_count = Column(Integer, default=0)
+    last_run_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    runs = relationship("PlaybookRun", back_populates="playbook")
+
+
+class PlaybookRun(Base):
+    __tablename__ = "playbook_runs"
+    id = Column(Integer, primary_key=True, index=True)
+    playbook_id = Column(Integer, ForeignKey("playbooks.id"), nullable=False)
+    triggered_by = Column(String(200), nullable=True)  # "alert:42", "manual", etc.
+    status = Column(String(20), default="running")  # running, success, error
+    output = Column(Text, nullable=True)   # JSON string of action results
+    started_at = Column(DateTime, default=datetime.utcnow)
+    completed_at = Column(DateTime, nullable=True)
+
+    playbook = relationship("Playbook", back_populates="runs")

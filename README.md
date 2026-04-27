@@ -264,6 +264,60 @@ SentinelOps automatically extracts and enriches Indicators of Compromise (IOCs) 
 | 0–39 | Green | Clean or low risk |
 | — | Gray | Not yet enriched |
 
+---
+
+## Feature: SOAR Playbooks
+
+SentinelOps ships a lightweight SOAR (Security Orchestration, Automation and Response) engine. Playbooks are trigger-action workflows that fire automatically when conditions are met — for example, isolating a host the moment a CRITICAL ransomware alert fires.
+
+### How it works
+
+1. Each playbook has a **trigger** (expressed as YAML) and an ordered **action list** (also YAML).
+2. On every relevant event, the engine calls `evaluate_trigger(trigger_yaml, context)` against the alert context dict.
+3. If the trigger matches, `execute_actions(actions_yaml, context)` runs each action handler in sequence, collecting results.
+4. Every run is recorded in `playbook_runs` with status (`running` / `success` / `error`) and a JSON output blob.
+
+### Trigger types
+
+| Type | Description |
+|---|---|
+| `always` | Fires on every event |
+| `alert_severity_gte` | Fires when alert severity >= the specified level (LOW < MEDIUM < HIGH < CRITICAL) |
+| `mitre_technique_in` | Fires when the alert's MITRE technique list contains any of the specified technique IDs |
+| `custom_expression` | Evaluates a Python expression against the alert context dict |
+| `time_window` | Fires only during a specified UTC hour range |
+
+### Built-in action handlers
+
+| Action | What it does |
+|---|---|
+| `notify_slack` | Posts a message to the configured Slack webhook |
+| `enrich_ioc` | Queues an IOC reputation lookup (stub — returns immediately) |
+| `isolate_host` | Sends an EDR isolation command (stub — logs the request) |
+| `block_ip` | Queues a firewall block rule (stub — logs the request) |
+| `create_jira_ticket` | Creates a Jira issue via REST API (stub when `JIRA_URL` is unset) |
+| `escalate_severity` | Escalates a threat's severity to the specified level |
+| `run_python_script` | Executes arbitrary Python in a limited sandbox |
+
+All handlers are no-ops when their external dependency (Slack webhook, Jira URL, etc.) is not configured. They never crash the playbook run.
+
+### Prebuilt playbooks (seeded on startup)
+
+| Playbook | Trigger | Actions |
+|---|---|---|
+| Critical Ransomware Response | severity >= CRITICAL | Notify Slack, isolate host, block C2 IP, escalate severity |
+| Suspicious Login Investigation | MITRE T1078 / T1110 / Brute Force | Notify Slack, enrich source IP, create Jira ticket |
+| Malicious IOC Enrichment | severity >= HIGH | Enrich source IP, notify Slack |
+
+Built-in playbooks are seeded at startup (idempotent — skipped if name already exists) and cannot be deleted via the API.
+
+### React page (`/playbooks`)
+
+- **Playbook table** — Name, trigger type badge, enable/disable toggle, run count, last run, action buttons (Run Now, Edit, Delete)
+- **New Playbook form** — Name, description, Trigger YAML editor, Actions YAML editor
+- **Edit modal** — Same fields, pre-populated with current values
+- **Run History table** — Playbook name, triggered-by, status badge (green/red/blue), started-at, collapsible JSON output
+
 ### Environment variables
 
 ```
@@ -292,6 +346,35 @@ Both keys are optional. When absent, lookups return `null` scores — the extrac
 - `backend/routers/iocs.py` — FastAPI router with list/top/get/enrich/delete endpoints
 - `frontend/src/pages/IOCs.jsx` — IOC Reputation page with top-3 cards and searchable table
 - `frontend/src/pages/Dashboard.jsx` — Top IOC Threats widget (conditionally rendered when data exists)
+
+### Environment variables (SOAR Playbooks)
+
+```
+SLACK_PLAYBOOK_WEBHOOK=   # dedicated webhook for playbook notifications; falls back to SLACK_WEBHOOK_URL
+JIRA_URL=
+JIRA_API_TOKEN=
+JIRA_PROJECT_KEY=SENTOPS
+```
+
+### API endpoints (SOAR Playbooks)
+
+| Method | Path | Description |
+|---|---|---|
+| GET | /api/playbooks/ | List all playbooks |
+| POST | /api/playbooks/ | Create a new playbook |
+| GET | /api/playbooks/{id} | Get a single playbook |
+| PUT | /api/playbooks/{id} | Update a playbook |
+| DELETE | /api/playbooks/{id} | Delete (blocked for built-ins) |
+| POST | /api/playbooks/{id}/toggle | Enable / disable |
+| POST | /api/playbooks/{id}/run | Manually run with a test context |
+| GET | /api/playbooks/{id}/runs | Run history for one playbook |
+| GET | /api/playbooks/runs/all | All runs across all playbooks |
+
+### Extending with a new action
+
+1. Create `backend/playbooks/handlers/my_action.py` with an `execute(params, context) -> str` function.
+2. Import it and add it to `HANDLERS` in `backend/playbooks/engine.py`.
+3. Use it in a playbook's `actions_yaml`: `- action: my_action`.
 
 ---
 

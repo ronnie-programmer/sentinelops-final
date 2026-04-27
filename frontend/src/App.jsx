@@ -12,6 +12,7 @@ import NotificationSettings from './pages/NotificationSettings'
 import MitreMatrix from './pages/MitreMatrix'
 import Integrations from './pages/Integrations'
 import IOCs from './pages/IOCs'
+import Playbooks from './pages/Playbooks'
 
 export default function App() {
   return (
@@ -32,6 +33,7 @@ export default function App() {
             <Route path="/mitre" element={<MitreMatrix />} />
             <Route path="/integrations" element={<Integrations />} />
             <Route path="/iocs" element={<IOCs />} />
+            <Route path="/playbooks" element={<Playbooks />} />
           </Routes>
         </main>
       </div>

@@ -1,0 +1,13 @@
+name: "Malicious IOC Enrichment"
+description: "For every HIGH or CRITICAL alert, extract and enrich IOCs from the alert description."
+enabled: true
+is_builtin: true
+trigger:
+  type: alert_severity_gte
+  severity: HIGH
+actions:
+  - action: enrich_ioc
+    ioc_value: "{alert_source_ip}"
+    ioc_type: ip
+  - action: notify_slack
+    message: "IOC ENRICHMENT: Running reputation lookup for IOCs in '{alert_title}'"

@@ -1,0 +1,16 @@
+name: "Critical Ransomware Response"
+description: "Automatically respond to ransomware detections: notify team, isolate affected host, and block C2 IP."
+enabled: true
+is_builtin: true
+trigger:
+  type: alert_severity_gte
+  severity: CRITICAL
+actions:
+  - action: notify_slack
+    message: "RANSOMWARE ALERT: {alert_title} on {alert_affected_system}. Severity: {alert_severity}. Initiating automated response."
+  - action: isolate_host
+    hostname: "{alert_affected_system}"
+  - action: block_ip
+    ip: "{alert_source_ip}"
+  - action: escalate_severity
+    to: CRITICAL

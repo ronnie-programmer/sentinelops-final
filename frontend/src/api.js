@@ -85,4 +85,16 @@ export const complianceReportsApi = {
   delete: (id) => api.delete(`/compliance/reports/${id}`),
 }
 
+export const playbooksApi = {
+  getAll: () => api.get('/playbooks/'),
+  create: (data) => api.post('/playbooks/', data),
+  getOne: (id) => api.get(`/playbooks/${id}`),
+  update: (id, data) => api.put(`/playbooks/${id}`, data),
+  delete: (id) => api.delete(`/playbooks/${id}`),
+  toggle: (id) => api.post(`/playbooks/${id}/toggle`),
+  run: (id) => api.post(`/playbooks/${id}/run`),
+  getRuns: (id) => api.get(`/playbooks/${id}/runs`),
+  getAllRuns: () => api.get('/playbooks/runs/all'),
+}
+
 export default api
