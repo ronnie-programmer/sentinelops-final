@@ -69,4 +69,10 @@ export const integrationsApi = {
   getAlerts: (source) => api.get('/integrations/alerts', { params: source ? { source } : {} }),
 }
 
+export const edrApi = {
+  getActions: () => api.get('/integrations/edr/actions'),
+  isolateHost: (provider, data) => api.post(`/integrations/edr/${provider}/isolate`, data),
+  killProcess: (provider, data) => api.post(`/integrations/edr/${provider}/kill-process`, data),
+}
+
 export default api
