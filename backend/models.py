@@ -149,3 +149,18 @@ class Integration(Base):
     status = Column(String(20), default="idle")  # idle, connected, mock, error
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class IOC(Base):
+    __tablename__ = "iocs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    ioc_type = Column(String(20), nullable=False)  # ip, domain, hash, url
+    value = Column(String(500), nullable=False, unique=True)
+    vt_score = Column(Integer, nullable=True)         # 0-100 (malicious %)
+    vt_engines_total = Column(Integer, nullable=True)
+    vt_engines_malicious = Column(Integer, nullable=True)
+    abuseipdb_score = Column(Integer, nullable=True)  # 0-100 confidence of abuse
+    last_enriched_at = Column(DateTime, nullable=True)
+    source_alert_id = Column(Integer, ForeignKey("alert_logs.id"), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
