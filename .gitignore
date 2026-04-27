@@ -12,6 +12,7 @@ venv/
 
 # ML artifacts (generated on startup — not committed)
 backend/ml/artifacts/*.pkl
+backend/ueba/artifacts/
 
 # Node
 node_modules/

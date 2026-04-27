@@ -149,3 +149,27 @@ class Integration(Base):
     status = Column(String(20), default="idle")  # idle, connected, mock, error
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class UserBaseline(Base):
+    __tablename__ = "user_baselines"
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String(100), nullable=False, unique=True)
+    entity_type = Column(String(30), default="user")  # user, service, host
+    baseline_data_json = Column(Text, nullable=True)  # JSON: feature statistics
+    model_artifact_path = Column(String(500), nullable=True)  # path to joblib file
+    event_count = Column(Integer, default=0)
+    last_trained_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class UEBAEvent(Base):
+    __tablename__ = "ueba_events"
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String(100), nullable=False)
+    event_type = Column(String(50), nullable=False)  # login, file_access, privilege_escalation, data_transfer, anomalous_time
+    event_data_json = Column(Text, nullable=True)    # JSON: raw event features
+    anomaly_score = Column(Integer, nullable=True)   # 0-100 (higher = more anomalous)
+    is_anomaly = Column(Integer, default=0)          # 0=normal, 1=anomaly
+    detected_at = Column(DateTime, default=datetime.utcnow)
+    source = Column(String(50), default="ueba")

@@ -232,3 +232,38 @@ class IntegrationOut(BaseModel):
 
 class IntegrationToggle(BaseModel):
     enabled: bool
+
+
+# ----- UEBA Schemas -----
+
+class UserBaselineOut(BaseModel):
+    id: int
+    username: str
+    entity_type: str
+    event_count: int
+    last_trained_at: Optional[datetime] = None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class UEBAEventOut(BaseModel):
+    id: int
+    username: str
+    event_type: str
+    event_data_json: Optional[str] = None
+    anomaly_score: Optional[int] = None
+    is_anomaly: bool
+    detected_at: datetime
+    source: str
+
+    class Config:
+        from_attributes = True
+
+
+class UEBAEventCreate(BaseModel):
+    username: str
+    event_type: str
+    event_data_json: Optional[str] = None
+    source: str = "api"
