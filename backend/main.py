@@ -7,7 +7,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from database import engine, SessionLocal
 from models import Base
 from routers import alerts, assets, compliance, dashboard, intel, integrations, mitre, notifications, threats
+from routers import ueba as ueba_router
 from integrations.scheduler import start_scheduler, stop_scheduler
+from ueba.seeder import seed_ueba_data
 
 Base.metadata.create_all(bind=engine)
 
@@ -16,6 +18,16 @@ Base.metadata.create_all(bind=engine)
 async def lifespan(app: FastAPI):
     poll_interval = int(os.getenv("INTEGRATION_POLL_INTERVAL_MINUTES", "5"))
     start_scheduler(SessionLocal, poll_interval)
+
+    db = SessionLocal()
+    try:
+        seed_ueba_data(db)
+    except Exception as exc:
+        import logging
+        logging.getLogger(__name__).error("UEBA seeder failed (non-fatal): %s", exc)
+    finally:
+        db.close()
+
     yield
     stop_scheduler()
 
@@ -47,6 +59,7 @@ app.include_router(intel.router)
 app.include_router(notifications.router)
 app.include_router(mitre.router)
 app.include_router(integrations.router)
+app.include_router(ueba_router.router)
 
 
 @app.get("/")

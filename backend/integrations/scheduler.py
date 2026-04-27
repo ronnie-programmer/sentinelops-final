@@ -68,6 +68,7 @@ def start_scheduler(db_factory, poll_interval_minutes: int = 5):
     from integrations.crowdstrike import CrowdStrikeAdapter
     from integrations.datadog import DatadogAdapter
     from integrations.splunk import SplunkAdapter
+    from apscheduler.triggers.cron import CronTrigger
 
     _scheduler = AsyncIOScheduler()
 
@@ -79,6 +80,16 @@ def start_scheduler(db_factory, poll_interval_minutes: int = 5):
             id=f"poll_{adapter_class.provider_name}",
             replace_existing=True,
         )
+
+    # Nightly UEBA baseline retraining at 02:00 UTC
+    from ueba.scheduler import retrain_all_baselines
+    _scheduler.add_job(
+        retrain_all_baselines,
+        trigger=CronTrigger(hour=2, minute=0),
+        args=[db_factory],
+        id="ueba_nightly_retrain",
+        replace_existing=True,
+    )
 
     _scheduler.start()
     logger.info("Integration scheduler started (interval: %d min)", poll_interval_minutes)
