@@ -10,6 +10,7 @@ import ThreatIntel from './pages/ThreatIntel'
 import NotificationSettings from './pages/NotificationSettings'
 import MitreMatrix from './pages/MitreMatrix'
 import Integrations from './pages/Integrations'
+import UEBA from './pages/UEBA'
 
 export default function App() {
   return (
@@ -28,6 +29,7 @@ export default function App() {
             <Route path="/notifications" element={<NotificationSettings />} />
             <Route path="/mitre" element={<MitreMatrix />} />
             <Route path="/integrations" element={<Integrations />} />
+            <Route path="/ueba" element={<UEBA />} />
           </Routes>
         </main>
       </div>

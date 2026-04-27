@@ -69,4 +69,13 @@ export const integrationsApi = {
   getAlerts: (source) => api.get('/integrations/alerts', { params: source ? { source } : {} }),
 }
 
+export const uebaApi = {
+  getEvents: (params) => api.get('/ueba/events', { params }),
+  getTopEvents: () => api.get('/ueba/events/top'),
+  getUsers: () => api.get('/ueba/users'),
+  getUserProfile: (username) => api.get(`/ueba/users/${username}/profile`),
+  retrain: () => api.post('/ueba/retrain'),
+  recordEvent: (data) => api.post('/ueba/events', data),
+}
+
 export default api
