@@ -239,6 +239,62 @@ Set `INTEGRATION_POLL_INTERVAL_MINUTES` to change the polling cadence (default `
 3. Implement `push_acknowledgement(alert_id)`.
 4. Add an entry to `ADAPTERS` in `backend/routers/integrations.py` and register the job in `backend/integrations/scheduler.py`.
 
+---
+
+## Feature: IOC Enrichment
+
+SentinelOps automatically extracts and enriches Indicators of Compromise (IOCs) from alert and threat text using VirusTotal and AbuseIPDB.
+
+### What it does
+
+- **Automatic extraction** — a regex-based extractor finds IPv4 addresses (skipping RFC-1918 private ranges), SHA-256/SHA-1/MD5 hashes, domains, and URLs from any text field
+- **VirusTotal lookup** — each IOC is checked against the VirusTotal API; the malicious engine ratio is stored as a 0-100 score
+- **AbuseIPDB lookup** — IP-type IOCs are also checked against AbuseIPDB's abuse confidence score (0-100)
+- **24-hour cache** — previously enriched IOCs are reused for 24 hours to avoid rate-limit exhaustion
+- **On-demand re-enrichment** — any IOC can be refreshed instantly via the UI Enrich button or the REST endpoint
+- **IOC Reputation page** — `/iocs` lists all IOCs in a searchable, filterable table with color-coded risk scores
+- **Dashboard widget** — the top 3 highest-scoring IOCs appear on the main dashboard
+
+### Score color coding
+
+| Score range | Color | Meaning |
+|---|---|---|
+| 75–100 | Red | High confidence malicious |
+| 40–74 | Amber | Suspicious / moderate risk |
+| 0–39 | Green | Clean or low risk |
+| — | Gray | Not yet enriched |
+
+### Environment variables
+
+```
+VIRUSTOTAL_API_KEY=    # Get from https://www.virustotal.com/gui/my-apikey
+ABUSEIPDB_API_KEY=     # Get from https://www.abuseipdb.com/account/api
+```
+
+Both keys are optional. When absent, lookups return `null` scores — the extractor still runs and IOC records are created; scores populate once keys are added.
+
+### API endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | /api/iocs/ | List all IOCs; filter with `?type=ip&search=xxx&limit=100` |
+| GET | /api/iocs/top | Top 3 IOCs by highest score |
+| GET | /api/iocs/{id} | Get single IOC |
+| POST | /api/iocs/enrich/{id} | Re-enrich an IOC on demand |
+| DELETE | /api/iocs/{id} | Delete an IOC record |
+
+### Architecture
+
+- `backend/services/enrichment/extractor.py` — pure-Python regex IOC extraction, no external deps
+- `backend/services/enrichment/virustotal.py` — VirusTotal API v3 client; handles all four IOC types
+- `backend/services/enrichment/abuseipdb.py` — AbuseIPDB v2 client; IP-only
+- `backend/services/enrichment/enricher.py` — orchestrates extraction, cache check, lookup calls, and DB writes
+- `backend/routers/iocs.py` — FastAPI router with list/top/get/enrich/delete endpoints
+- `frontend/src/pages/IOCs.jsx` — IOC Reputation page with top-3 cards and searchable table
+- `frontend/src/pages/Dashboard.jsx` — Top IOC Threats widget (conditionally rendered when data exists)
+
+---
+
 ## Project Structure
 
 ```
