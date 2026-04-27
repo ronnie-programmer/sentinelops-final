@@ -77,6 +77,7 @@ class Threat(Base):
     threat_type = Column(String(100), nullable=False)
     mitre_tactic = Column(String(100), nullable=True)
     mitre_technique = Column(String(100), nullable=True)
+    mitre_techniques = Column(Text, nullable=True)
     source_ip = Column(String(45), nullable=True)
     destination_ip = Column(String(45), nullable=True)
     affected_system = Column(String(200), nullable=True)
@@ -100,6 +101,7 @@ class AlertLog(Base):
     recipient = Column(String(200), nullable=True)
     status = Column(String(20), default="Pending", nullable=False)
     summary = Column(Text, nullable=True)
+    mitre_techniques = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     acknowledged_at = Column(DateTime, nullable=True)
 

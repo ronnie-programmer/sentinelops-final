@@ -75,6 +75,7 @@ class ThreatUpdate(BaseModel):
 
 class ThreatOut(ThreatBase):
     id: int
+    mitre_techniques: Optional[str] = None
     ai_analysis: Optional[str] = None
     ai_analyzed_at: Optional[datetime] = None
     created_at: datetime
@@ -101,6 +102,7 @@ class AlertLogOut(BaseModel):
     recipient: Optional[str] = None
     status: str
     summary: Optional[str] = None
+    mitre_techniques: Optional[str] = None
     created_at: datetime
     acknowledged_at: Optional[datetime] = None
 

@@ -56,4 +56,10 @@ export const notificationsApi = {
   test: (channel) => api.post('/notifications/test', { channel }),
 }
 
+export const mitreApi = {
+  getTechniques: () => api.get('/mitre/techniques'),
+  getTechnique: (id) => api.get(`/mitre/techniques/${id}`),
+  getMatrix: () => api.get('/mitre/matrix'),
+}
+
 export default api

@@ -8,6 +8,7 @@ import Assets from './pages/Assets'
 import Compliance from './pages/Compliance'
 import ThreatIntel from './pages/ThreatIntel'
 import NotificationSettings from './pages/NotificationSettings'
+import MitreMatrix from './pages/MitreMatrix'
 
 export default function App() {
   return (
@@ -24,6 +25,7 @@ export default function App() {
             <Route path="/compliance" element={<Compliance />} />
             <Route path="/intel" element={<ThreatIntel />} />
             <Route path="/notifications" element={<NotificationSettings />} />
+            <Route path="/mitre" element={<MitreMatrix />} />
           </Routes>
         </main>
       </div>
