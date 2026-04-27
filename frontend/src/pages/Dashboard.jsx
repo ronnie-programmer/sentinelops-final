@@ -4,7 +4,7 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
 } from 'recharts'
-import { dashboardApi } from '../api'
+import { dashboardApi, iocApi } from '../api'
 
 const SEV_COLORS = {
   CRITICAL: '#f85149',
@@ -24,9 +24,17 @@ const STAT_CARDS = (stats) => [
   { label: 'Unread Alerts', value: stats.unread_alerts, color: 'text-red-400', bg: 'bg-red-900/10 border-red-800/30' },
 ]
 
+function iocScoreColor(score) {
+  if (score === null || score === undefined) return 'text-[#8b949e]'
+  if (score >= 75) return 'text-red-400'
+  if (score >= 40) return 'text-yellow-400'
+  return 'text-green-400'
+}
+
 export default function Dashboard() {
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [topIocs, setTopIocs] = useState([])
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -34,6 +42,7 @@ export default function Dashboard() {
       setStats(r.data)
       setLoading(false)
     }).catch(() => setLoading(false))
+    iocApi.getTop().then((r) => setTopIocs(r.data)).catch(() => {})
   }, [])
 
   if (loading) return <div className="flex items-center justify-center h-64 text-[#8b949e]">Loading dashboard...</div>
@@ -94,6 +103,48 @@ export default function Dashboard() {
           </ResponsiveContainer>
         </div>
       </div>
+
+      {/* Top IOC Threats */}
+      {topIocs.length > 0 && (
+        <div className="card">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-[#30363d]">
+            <h3 className="text-sm font-semibold text-white">Top IOC Threats</h3>
+            <button onClick={() => navigate('/iocs')} className="text-xs text-[#58a6ff] hover:underline">View all</button>
+          </div>
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-[10px] uppercase text-[#8b949e] border-b border-[#21262d]">
+                <th className="text-left px-4 py-2">Type</th>
+                <th className="text-left px-4 py-2">Value</th>
+                <th className="text-left px-4 py-2">VT Score</th>
+                <th className="text-left px-4 py-2 hidden md:table-cell">AbuseIPDB</th>
+              </tr>
+            </thead>
+            <tbody>
+              {topIocs.map((ioc) => (
+                <tr key={ioc.id} className="table-row" onClick={() => navigate('/iocs')}>
+                  <td className="px-4 py-2.5">
+                    <span className="text-xs bg-[#21262d] border border-[#30363d] rounded px-2 py-0.5 text-[#8b949e] uppercase">
+                      {ioc.ioc_type}
+                    </span>
+                  </td>
+                  <td className="px-4 py-2.5 font-mono text-xs text-[#58a6ff] max-w-xs truncate">{ioc.value}</td>
+                  <td className="px-4 py-2.5">
+                    <span className={`font-semibold ${iocScoreColor(ioc.vt_score)}`}>
+                      {ioc.vt_score !== null && ioc.vt_score !== undefined ? ioc.vt_score : '—'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-2.5 hidden md:table-cell">
+                    <span className={`font-semibold ${iocScoreColor(ioc.abuseipdb_score)}`}>
+                      {ioc.abuseipdb_score !== null && ioc.abuseipdb_score !== undefined ? ioc.abuseipdb_score : '—'}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {/* Recent threats */}
       <div className="card">
