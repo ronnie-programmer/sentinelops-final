@@ -271,5 +271,57 @@ sentinelops-final/
         ├── api.js       # Axios client (reads VITE_API_URL)
         ├── App.jsx      # Routes
         ├── components/  # Sidebar, Navbar
-        └── pages/       # Dashboard, Threats, Alerts, Assets, Compliance, ThreatIntel, Integrations
+        └── pages/       # Dashboard, Threats, Alerts, Assets, Compliance, ThreatIntel, Integrations, UEBA
+```
+
+---
+
+## Feature: UEBA — User & Entity Behavior Analytics
+
+SentinelOps tracks user and entity behavior over time, builds per-user baselines using IsolationForest, and scores every new event against those baselines. Events that deviate significantly from the established baseline are flagged as anomalies.
+
+### How it works
+
+1. **Feature extraction** (`backend/ueba/features.py`) — each event is converted into an 8-dimensional numeric vector: hour of day, day of week, event type, geographic region, file count, privilege flag, bytes transferred, and failed login count.
+
+2. **Baseline training** (`backend/ueba/models/baseline.py`) — an `IsolationForest` (50 estimators, 10% contamination) is fitted per user on their historical event vectors. The trained model is persisted to `backend/ueba/artifacts/<username>_baseline.joblib`.
+
+3. **Anomaly scoring** (`backend/ueba/scoring.py`) — the IsolationForest `decision_function` output is mapped to a 0–100 score (higher = more anomalous). Events scoring ≥ 70 are flagged as anomalies.
+
+4. **Nightly retraining** — APScheduler fires `retrain_all_baselines` at 02:00 UTC every night to keep baselines current. You can also trigger a manual retrain from the UI or via `POST /api/ueba/retrain`.
+
+5. **Seed data** — on first startup, `seed_ueba_data` trains baselines for 5 demo users and writes 50 sample events (40 normal + 10 anomalous) so the `/ueba` page has data immediately.
+
+### UEBA page (`/ueba`)
+
+- **Stats row** — events today, anomalies detected, high-risk users (peak score ≥ 70), and users with trained baselines.
+- **Anomaly Events table** — all events with score bar (green/yellow/red), anomaly badge, and timestamp. Filterable by All / Anomalies / Normal.
+- **User Baselines panel** — one card per user showing anomaly count and peak score. Click any card or username to open the profile modal.
+- **User Profile modal** — baseline metadata, aggregate stats, and the 20 most recent events for that user.
+- **Retrain Baselines button** — triggers background retraining; reports status inline.
+
+### API endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | /api/ueba/events | List events (`?is_anomaly=1&limit=50&username=xxx`) |
+| GET | /api/ueba/events/top | Top 20 highest-scoring events |
+| GET | /api/ueba/users | List all users with baselines |
+| GET | /api/ueba/users/{username}/profile | User detail: baseline + recent events + stats |
+| POST | /api/ueba/retrain | Trigger manual retraining (background) |
+| POST | /api/ueba/events | Record and score a new event |
+
+### Environment variables
+
+```
+UEBA_BASELINE_DIR=ueba/artifacts/   # relative to backend/ — where .joblib models are stored
+UEBA_ANOMALY_THRESHOLD=70           # 0-100, events above this are flagged as anomalies
+```
+
+### Additional dependencies
+
+```
+scikit-learn==1.4.2
+numpy==1.26.4
+joblib==1.4.0
 ```
