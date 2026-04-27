@@ -19,6 +19,41 @@ A full-stack Security Operations Center (SOC) dashboard. Tracks threats, alerts,
 - **Compliance** — NIST 800-53 and SOC 2 control status with CSV export
 - **Dashboard** — live stats, 7-day threat trend, breakdown by type
 
+## Feature: MITRE ATT&CK Mapping
+
+Every threat and alert record is automatically tagged with up to three MITRE ATT&CK technique IDs at creation time.
+
+**How it works:**
+
+- Threats are classified by a keyword-based classifier in `backend/services/mitre_classifier.py`. Known threat types (Ransomware, Phishing, Brute Force, etc.) map directly to a curated set of technique IDs. Unknown types fall back to keyword matching against each technique's keyword list, then to T1078 if nothing matches.
+- The matched technique IDs are stored as a JSON array in the `mitre_techniques` column on both the `Threat` and `AlertLog` models (e.g. `["T1486", "T1490", "T1078"]`).
+- Alert records created for HIGH/CRITICAL threats inherit the same `mitre_techniques` value from their parent threat.
+
+**Data source:**
+
+Technique definitions live in `backend/data/mitre_techniques.json` — a curated subset of 36 MITRE ATT&CK Enterprise techniques covering Initial Access, Execution, Persistence, Privilege Escalation, Defense Evasion, Credential Access, Discovery, Lateral Movement, Collection, Exfiltration, Command and Control, and Impact. No external download is required; the file ships with the repo.
+
+**Matrix page (`/mitre`):**
+
+The Matrix page renders a heat-map grid of all techniques grouped by tactic. Each technique cell is colored by detection count over the past 30 days:
+
+- Gray — no detections
+- Blue — 1–2 detections
+- Orange — 3–5 detections
+- Red — 6+ detections
+
+Clicking any cell opens a detail panel with the technique ID, name, tactic, detection count, and a direct link to `https://attack.mitre.org/techniques/{ID}/`.
+
+**API endpoints:**
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | /api/mitre/techniques | List all 36 techniques |
+| GET | /api/mitre/techniques/{id} | Get one technique by ID |
+| GET | /api/mitre/matrix | Matrix grouped by tactic with 30-day detection counts |
+
+---
+
 ## Local Setup
 
 ### Prerequisites

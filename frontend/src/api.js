@@ -49,4 +49,10 @@ export const intelApi = {
   delete: (id) => api.delete(`/intel/${id}`),
 }
 
+export const mitreApi = {
+  getTechniques: () => api.get('/mitre/techniques'),
+  getTechnique: (id) => api.get(`/mitre/techniques/${id}`),
+  getMatrix: () => api.get('/mitre/matrix'),
+}
+
 export default api

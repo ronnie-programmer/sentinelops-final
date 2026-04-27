@@ -3,6 +3,9 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime
 import random
+import json
+
+from services.mitre_classifier import classify_alert
 
 from database import get_db
 from models import Threat, AlertLog
@@ -229,6 +232,14 @@ def create_threat(threat_in: ThreatCreate, db: Session = Depends(get_db)):
     db.add(threat)
     db.flush()
 
+    # Auto-classify MITRE techniques
+    technique_ids = classify_alert(
+        threat_type=threat.threat_type or "",
+        title=threat.title or "",
+        description=threat.description or "",
+    )
+    threat.mitre_techniques = json.dumps(technique_ids)
+
     # Auto-create alert for HIGH and CRITICAL threats
     if threat.severity in ("CRITICAL", "HIGH"):
         alert = AlertLog(
@@ -243,6 +254,7 @@ def create_threat(threat_in: ThreatCreate, db: Session = Depends(get_db)):
             status="Pending",
         )
         db.add(alert)
+        alert.mitre_techniques = threat.mitre_techniques
 
     db.commit()
     db.refresh(threat)
