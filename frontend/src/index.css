@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-[#0d1117] text-gray-200 font-mono antialiased;
+  }
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-[#0d1117];
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-[#30363d] rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-[#58a6ff];
+  }
+}
+
+@layer components {
+  .severity-badge {
+    @apply px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wide;
+  }
+  .severity-critical {
+    @apply bg-red-900/50 text-red-400 border border-red-700/50;
+  }
+  .severity-high {
+    @apply bg-orange-900/50 text-orange-400 border border-orange-700/50;
+  }
+  .severity-medium {
+    @apply bg-yellow-900/50 text-yellow-400 border border-yellow-700/50;
+  }
+  .severity-low {
+    @apply bg-blue-900/50 text-blue-400 border border-blue-700/50;
+  }
+  .status-open {
+    @apply bg-red-900/30 text-red-300 border border-red-800/40;
+  }
+  .status-investigating {
+    @apply bg-yellow-900/30 text-yellow-300 border border-yellow-800/40;
+  }
+  .status-resolved {
+    @apply bg-green-900/30 text-green-300 border border-green-800/40;
+  }
+  .card {
+    @apply bg-[#161b22] border border-[#30363d] rounded-lg;
+  }
+  .btn-primary {
+    @apply bg-[#58a6ff] hover:bg-[#79b8ff] text-black font-semibold px-4 py-2 rounded-md text-sm transition-colors;
+  }
+  .btn-secondary {
+    @apply bg-[#21262d] hover:bg-[#30363d] text-gray-200 border border-[#30363d] px-4 py-2 rounded-md text-sm transition-colors;
+  }
+  .btn-danger {
+    @apply bg-red-900/50 hover:bg-red-800/70 text-red-300 border border-red-700/50 px-4 py-2 rounded-md text-sm transition-colors;
+  }
+  .input {
+    @apply bg-[#0d1117] border border-[#30363d] rounded-md px-3 py-2 text-gray-200 text-sm focus:outline-none focus:border-[#58a6ff] placeholder-gray-600;
+  }
+  .table-row {
+    @apply border-b border-[#21262d] hover:bg-[#1c2128] transition-colors cursor-pointer;
+  }
+}
