@@ -69,4 +69,12 @@ export const integrationsApi = {
   getAlerts: (source) => api.get('/integrations/alerts', { params: source ? { source } : {} }),
 }
 
+export const iocApi = {
+  getAll: (params) => api.get('/iocs/', { params }),
+  getTop: () => api.get('/iocs/top'),
+  getOne: (id) => api.get(`/iocs/${id}`),
+  enrich: (id) => api.post(`/iocs/enrich/${id}`),
+  delete: (id) => api.delete(`/iocs/${id}`),
+}
+
 export default api

@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from database import engine, SessionLocal
 from models import Base
-from routers import alerts, assets, compliance, dashboard, intel, integrations, mitre, notifications, threats
+from routers import alerts, assets, compliance, dashboard, intel, integrations, iocs, mitre, notifications, threats
 from integrations.scheduler import start_scheduler, stop_scheduler
 
 Base.metadata.create_all(bind=engine)
@@ -47,6 +47,7 @@ app.include_router(intel.router)
 app.include_router(notifications.router)
 app.include_router(mitre.router)
 app.include_router(integrations.router)
+app.include_router(iocs.router)
 
 
 @app.get("/")

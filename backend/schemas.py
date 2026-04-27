@@ -232,3 +232,27 @@ class IntegrationOut(BaseModel):
 
 class IntegrationToggle(BaseModel):
     enabled: bool
+
+
+# ----- IOC Schemas -----
+
+class IOCCreate(BaseModel):
+    ioc_type: str
+    value: str
+    source_alert_id: Optional[int] = None
+
+
+class IOCOut(BaseModel):
+    id: int
+    ioc_type: str
+    value: str
+    vt_score: Optional[int] = None
+    vt_engines_total: Optional[int] = None
+    vt_engines_malicious: Optional[int] = None
+    abuseipdb_score: Optional[int] = None
+    last_enriched_at: Optional[datetime] = None
+    source_alert_id: Optional[int] = None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
