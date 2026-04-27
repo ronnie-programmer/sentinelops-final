@@ -62,4 +62,11 @@ export const mitreApi = {
   getMatrix: () => api.get('/mitre/matrix'),
 }
 
+export const integrationsApi = {
+  getAll: () => api.get('/integrations/'),
+  toggle: (provider, enabled) => api.post(`/integrations/${provider}/toggle`, { enabled }),
+  pollNow: (provider) => api.post(`/integrations/${provider}/poll`),
+  getAlerts: (source) => api.get('/integrations/alerts', { params: source ? { source } : {} }),
+}
+
 export default api
