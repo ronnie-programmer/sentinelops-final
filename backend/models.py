@@ -149,3 +149,17 @@ class Integration(Base):
     status = Column(String(20), default="idle")  # idle, connected, mock, error
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class ComplianceReport(Base):
+    __tablename__ = "compliance_reports"
+    id = Column(Integer, primary_key=True, index=True)
+    framework = Column(String(20), nullable=False)   # SOC2, HIPAA, NIST, CMMC
+    date_range_start = Column(DateTime, nullable=False)
+    date_range_end = Column(DateTime, nullable=False)
+    generated_at = Column(DateTime, default=datetime.utcnow)
+    file_path = Column(String(500), nullable=True)
+    status = Column(String(20), default="generating")  # generating, ready, error
+    alert_count = Column(Integer, default=0)
+    threat_count = Column(Integer, default=0)
+    error_message = Column(Text, nullable=True)
