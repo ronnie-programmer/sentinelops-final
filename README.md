@@ -239,6 +239,48 @@ Set `INTEGRATION_POLL_INTERVAL_MINUTES` to change the polling cadence (default `
 3. Implement `push_acknowledgement(alert_id)`.
 4. Add an entry to `ADAPTERS` in `backend/routers/integrations.py` and register the job in `backend/integrations/scheduler.py`.
 
+## Feature: EDR Adapters
+
+SentinelOps includes two EDR-specific adapters that extend the v2 integration pattern with endpoint detection and response capabilities.
+
+### Providers
+
+| Provider | Module | Env vars required |
+|---|---|---|
+| CrowdStrike Insight | `integrations/edr/crowdstrike_insight.py` | `CROWDSTRIKE_INSIGHT_CLIENT_ID`, `CROWDSTRIKE_INSIGHT_CLIENT_SECRET` (falls back to `CROWDSTRIKE_CLIENT_ID` / `CROWDSTRIKE_CLIENT_SECRET`) |
+| SentinelOne Singularity | `integrations/edr/sentinelone.py` | `SENTINELONE_API_KEY`, `SENTINELONE_MANAGEMENT_URL` |
+
+Both adapters enter **mock mode** automatically when credentials are absent, producing realistic EDR-shaped alerts (process injection, credential dumping, fileless malware, ransomware, C2 beaconing, privilege escalation).
+
+### EDR-specific actions
+
+**CrowdStrike Insight — `isolate_host(hostname, device_id="")`**
+Sends a host containment command via the Falcon Real Time Response API. In mock mode returns `{"status": "mock_isolated", "hostname": ...}` immediately.
+
+**SentinelOne Singularity — `kill_process(agent_id, process_id)`**
+Dispatches a Remote Script Orchestration task to kill the specified PID on an endpoint. In mock mode returns `{"status": "mock_killed", "agent_id": ..., "pid": ...}` immediately.
+
+### EDR API endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | /api/integrations/edr/actions | List available EDR actions across all providers |
+| POST | /api/integrations/edr/crowdstrike_insight/isolate | Isolate a host — body: `{hostname, device_id}` |
+| POST | /api/integrations/edr/sentinelone/kill-process | Kill a process — body: `{agent_id, process_id}` |
+
+### Integrations page
+
+The `/integrations` page shows an **EDR Adapters** section beneath the core integrations. Each EDR card follows the same layout (status badge, last polled, poll count, Enable/Disable toggle, Poll Now) and adds a provider-specific action button:
+
+- CrowdStrike Insight card: **Isolate Host** — opens a modal to enter a hostname and optional device ID
+- SentinelOne card: **Kill Process** — opens a modal to enter an agent ID and PID
+
+### Background polling
+
+Both EDR adapters register in the APScheduler alongside CrowdStrike, Datadog, and Splunk. Polls are deduplicated by `external_id` and written as `Threat` + `AlertLog` rows identical to the existing adapters.
+
+---
+
 ## Project Structure
 
 ```
