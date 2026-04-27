@@ -273,3 +273,43 @@ sentinelops-final/
         ├── components/  # Sidebar, Navbar
         └── pages/       # Dashboard, Threats, Alerts, Assets, Compliance, ThreatIntel, Integrations
 ```
+
+## Feature: Compliance Reporting
+
+Generate audit-ready PDF reports for SOC2, HIPAA, NIST 800-53, and CMMC frameworks. Each report maps framework controls to evidence collected from the platform (alerts, threats, asset records).
+
+**Page:** `/compliance/reports`
+
+**How it works:**
+
+1. Pick a framework (SOC2, HIPAA, NIST, or CMMC) and a date range (preset or custom).
+2. Click **Generate Report** — the backend creates a DB record with `status=generating` and kicks off a background task.
+3. The background task queries alerts and threats in the date range, loads the framework's YAML control manifest, and builds a multi-page PDF using ReportLab:
+   - Title page — framework name, audit period, generated timestamp
+   - Executive Summary — alert count, threat count, critical count, resolved count
+   - Control Details — one section per control with description, evidence source, and a dynamic narrative derived from actual platform counts
+4. The report record is updated to `status=ready` with the file path. The page polls every 3 seconds while any report is generating.
+5. Click **PDF** to download. Click **Delete** to remove the record and file.
+
+**Framework manifests** live in `backend/data/compliance/` as YAML files:
+
+| File | Framework | Controls |
+|------|-----------|----------|
+| `soc2.yaml` | SOC 2 Type II | CC6.1, CC7.2, CC7.3, CC8.1, A1.1 |
+| `hipaa.yaml` | HIPAA Security Rule | 164.308(a)(1), 164.308(a)(5), 164.308(a)(6), 164.312(a)(1), 164.312(b) |
+| `nist.yaml` | NIST SP 800-53 Rev 5 | AC-2, AU-2, IR-4, IR-6, SI-3, SI-4 |
+| `cmmc.yaml` | CMMC Level 2 | AC.L1-3.1.1, AU.L2-3.3.1, IR.L2-3.6.1, SI.L1-3.14.1, SI.L2-3.14.6 |
+
+**API endpoints:**
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/compliance/reports` | List all reports |
+| `POST` | `/api/compliance/reports/generate` | Generate a new report |
+| `GET` | `/api/compliance/reports/{id}` | Get report metadata |
+| `GET` | `/api/compliance/reports/{id}/download` | Download PDF |
+| `DELETE` | `/api/compliance/reports/{id}` | Delete report + file |
+
+**Dependencies added:** `reportlab==4.1.0`, `pyyaml==6.0.1`
+
+**Generated PDFs** are stored in `backend/reports/` (created automatically, gitignored).
