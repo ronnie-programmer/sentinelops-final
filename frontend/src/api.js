@@ -69,4 +69,12 @@ export const integrationsApi = {
   getAlerts: (source) => api.get('/integrations/alerts', { params: source ? { source } : {} }),
 }
 
+export const complianceReportsApi = {
+  getAll: () => api.get('/compliance/reports'),
+  generate: (data) => api.post('/compliance/reports/generate', data),
+  getOne: (id) => api.get(`/compliance/reports/${id}`),
+  download: (id) => api.get(`/compliance/reports/${id}/download`, { responseType: 'blob' }),
+  delete: (id) => api.delete(`/compliance/reports/${id}`),
+}
+
 export default api
