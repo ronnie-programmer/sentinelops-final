@@ -176,3 +176,25 @@ class DashboardStats(BaseModel):
     unread_alerts: int
     threats_by_type: dict
     threats_by_day: list
+
+
+# ----- Notification Schemas -----
+
+class NotificationOut(BaseModel):
+    id: int
+    threat_id: Optional[int] = None
+    channel: str
+    status: str
+    error_message: Optional[str] = None
+    attempted_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class NotificationSettings(BaseModel):
+    slack_enabled: bool = False
+    slack_webhook_url: str = ""
+    pagerduty_enabled: bool = False
+    pagerduty_integration_key: str = ""
+    pagerduty_severity_threshold: str = "HIGH"

@@ -49,4 +49,11 @@ export const intelApi = {
   delete: (id) => api.delete(`/intel/${id}`),
 }
 
+export const notificationsApi = {
+  getAll: () => api.get('/notifications/'),
+  getSettings: () => api.get('/notifications/settings'),
+  saveSettings: (data) => api.post('/notifications/settings', data),
+  test: (channel) => api.post('/notifications/test', { channel }),
+}
+
 export default api

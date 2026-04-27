@@ -120,3 +120,15 @@ class ThreatIntel(Base):
     confidence = Column(Integer, default=75)
     is_imported = Column(Integer, default=0)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class Notification(Base):
+    __tablename__ = "notifications"
+
+    id = Column(Integer, primary_key=True, index=True)
+    threat_id = Column(Integer, ForeignKey("threats.id"), nullable=True)
+    channel = Column(String(50), nullable=False)  # "slack" or "pagerduty"
+    payload = Column(Text, nullable=True)
+    status = Column(String(20), default="pending")  # sent, skipped, error
+    error_message = Column(Text, nullable=True)
+    attempted_at = Column(DateTime, default=datetime.utcnow)

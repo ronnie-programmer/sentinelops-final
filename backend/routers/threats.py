@@ -3,11 +3,14 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime
 import random
+import json
 
 from database import get_db
-from models import Threat, AlertLog
+from models import Threat, AlertLog, Notification
 from schemas import ThreatCreate, ThreatUpdate, ThreatOut, AIAnalysisOut
 from services.summarizer import summarize_alert
+from notifications.slack import send_slack_alert
+from notifications.pagerduty import send_pagerduty_alert
 
 router = APIRouter(prefix="/api/threats", tags=["threats"])
 
@@ -245,6 +248,25 @@ def create_threat(threat_in: ThreatCreate, db: Session = Depends(get_db)):
         )
         db.add(alert)
         alert.summary = summarize_alert(alert, threat)
+
+        # Dispatch notifications for HIGH/CRITICAL alerts
+        for send_fn, channel in [
+            (send_slack_alert, "slack"),
+            (send_pagerduty_alert, "pagerduty"),
+        ]:
+            result = send_fn(
+                title=threat.title,
+                message=alert.message,
+                severity=threat.severity,
+                threat_id=threat.id,
+            )
+            notif = Notification(
+                threat_id=threat.id,
+                channel=channel,
+                payload=json.dumps(result),
+                status=result.get("status", "error"),
+            )
+            db.add(notif)
 
     db.commit()
     db.refresh(threat)
