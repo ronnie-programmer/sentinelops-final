@@ -99,6 +99,7 @@ class AlertLogOut(BaseModel):
     severity: str
     message: str
     recipient: Optional[str] = None
+    source: Optional[str] = None
     status: str
     created_at: datetime
     acknowledged_at: Optional[datetime] = None
@@ -175,3 +176,34 @@ class DashboardStats(BaseModel):
     unread_alerts: int
     threats_by_type: dict
     threats_by_day: list
+
+
+# ----- Integration Schemas -----
+
+class IntegrationOut(BaseModel):
+    id: int
+    provider: str
+    enabled: bool
+    is_mock: bool
+    last_polled_at: Optional[datetime] = None
+    last_poll_count: int = 0
+    status: str
+
+    class Config:
+        from_attributes = True
+
+    @classmethod
+    def from_orm_model(cls, obj):
+        return cls(
+            id=obj.id,
+            provider=obj.provider,
+            enabled=bool(obj.enabled),
+            is_mock=bool(obj.is_mock),
+            last_polled_at=obj.last_polled_at,
+            last_poll_count=obj.last_poll_count,
+            status=obj.status,
+        )
+
+
+class IntegrationToggle(BaseModel):
+    enabled: bool

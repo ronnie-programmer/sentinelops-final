@@ -98,6 +98,7 @@ class AlertLog(Base):
     severity = Column(String(20), nullable=False)
     message = Column(Text, nullable=False)
     recipient = Column(String(200), nullable=True)
+    source = Column(String(50), nullable=True)
     status = Column(String(20), default="Pending", nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     acknowledged_at = Column(DateTime, nullable=True)
@@ -119,3 +120,17 @@ class ThreatIntel(Base):
     confidence = Column(Integer, default=75)
     is_imported = Column(Integer, default=0)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class Integration(Base):
+    __tablename__ = "integrations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    provider = Column(String(50), nullable=False, unique=True)  # crowdstrike, datadog, splunk
+    enabled = Column(Integer, default=0)  # 0=disabled, 1=enabled
+    is_mock = Column(Integer, default=1)
+    last_polled_at = Column(DateTime, nullable=True)
+    last_poll_count = Column(Integer, default=0)
+    status = Column(String(20), default="idle")  # idle, connected, mock, error
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
