@@ -1,0 +1,29 @@
+framework: SOC2
+title: "SOC 2 Type II Audit Report"
+version: "2017"
+controls:
+  - id: CC6.1
+    name: "Logical and Physical Access Controls"
+    category: "Common Criteria"
+    description: "The entity implements logical access security software, infrastructure, and architectures over protected information assets."
+    evidence_source: "Asset inventory and access control alerts from /assets and /threats"
+  - id: CC7.2
+    name: "System Monitoring"
+    category: "Common Criteria"
+    description: "The entity monitors system components and the operation of controls."
+    evidence_source: "Alert dispatch logs, threat detection counts, integration polling status"
+  - id: CC7.3
+    name: "Evaluation of Security Events"
+    category: "Common Criteria"
+    description: "The entity evaluates security events to determine whether they could or have resulted in a failure to meet objectives."
+    evidence_source: "MITRE ATT&CK technique classifications on threats"
+  - id: CC8.1
+    name: "Change Management"
+    category: "Common Criteria"
+    description: "The entity authorizes, designs, develops, implements, operates, approves, maintains, and monitors infrastructure, data, software, and processes."
+    evidence_source: "Asset change tracking in /assets"
+  - id: A1.1
+    name: "Availability Monitoring"
+    category: "Availability"
+    description: "The entity maintains system components as needed."
+    evidence_source: "Asset status monitoring (Online/Offline/Vulnerable)"

@@ -77,4 +77,12 @@ export const iocApi = {
   delete: (id) => api.delete(`/iocs/${id}`),
 }
 
+export const complianceReportsApi = {
+  getAll: () => api.get('/compliance/reports'),
+  generate: (data) => api.post('/compliance/reports/generate', data),
+  getOne: (id) => api.get(`/compliance/reports/${id}`),
+  download: (id) => api.get(`/compliance/reports/${id}/download`, { responseType: 'blob' }),
+  delete: (id) => api.delete(`/compliance/reports/${id}`),
+}
+
 export default api

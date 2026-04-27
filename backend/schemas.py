@@ -256,3 +256,25 @@ class IOCOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+# ----- Compliance Report Schemas -----
+
+class ComplianceReportOut(BaseModel):
+    id: int
+    framework: str
+    date_range_start: datetime
+    date_range_end: datetime
+    generated_at: datetime
+    status: str
+    alert_count: int
+    threat_count: int
+
+    class Config:
+        from_attributes = True
+
+
+class ComplianceReportGenerate(BaseModel):
+    framework: str  # SOC2, HIPAA, NIST, CMMC
+    date_range_start: datetime
+    date_range_end: datetime

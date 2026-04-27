@@ -1,9 +1,16 @@
-from fastapi import APIRouter
+import os
+from datetime import datetime
 from typing import List
 import csv
 import io
 
-from fastapi.responses import StreamingResponse
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
+from fastapi.responses import FileResponse, StreamingResponse
+from sqlalchemy.orm import Session
+
+from database import get_db
+from models import ComplianceReport
+from schemas import ComplianceReportGenerate, ComplianceReportOut
 
 router = APIRouter(prefix="/api/compliance", tags=["compliance"])
 
@@ -110,3 +117,119 @@ def export_compliance_csv():
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=compliance_export.csv"},
     )
+
+
+# ── Compliance Report CRUD ───────────────────────────────────────────────────
+
+VALID_FRAMEWORKS = {"SOC2", "HIPAA", "NIST", "CMMC"}
+
+
+def _run_report_generation(report_id: int, db: Session) -> None:
+    from services.compliance.report_generator import generate_report
+
+    report = db.query(ComplianceReport).filter(ComplianceReport.id == report_id).first()
+    if not report:
+        return
+
+    try:
+        from models import AlertLog, Threat
+
+        alert_count = (
+            db.query(AlertLog)
+            .filter(AlertLog.created_at >= report.date_range_start)
+            .filter(AlertLog.created_at <= report.date_range_end)
+            .count()
+        )
+        threat_count = (
+            db.query(Threat)
+            .filter(Threat.created_at >= report.date_range_start)
+            .filter(Threat.created_at <= report.date_range_end)
+            .count()
+        )
+        report.alert_count = alert_count
+        report.threat_count = threat_count
+        db.commit()
+
+        file_path = generate_report(report, db)
+        report.file_path = file_path
+        report.status = "ready"
+        db.commit()
+    except Exception as exc:
+        report.status = "error"
+        report.error_message = str(exc)
+        db.commit()
+
+
+@router.get("/reports", response_model=List[ComplianceReportOut])
+def list_reports(db: Session = Depends(get_db)):
+    return db.query(ComplianceReport).order_by(ComplianceReport.generated_at.desc()).all()
+
+
+@router.post("/reports/generate", response_model=ComplianceReportOut, status_code=202)
+def generate_compliance_report(
+    payload: ComplianceReportGenerate,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+):
+    if payload.framework.upper() not in VALID_FRAMEWORKS:
+        raise HTTPException(status_code=400, detail=f"Invalid framework. Must be one of: {', '.join(VALID_FRAMEWORKS)}")
+
+    if payload.date_range_start >= payload.date_range_end:
+        raise HTTPException(status_code=400, detail="date_range_start must be before date_range_end")
+
+    report = ComplianceReport(
+        framework=payload.framework.upper(),
+        date_range_start=payload.date_range_start,
+        date_range_end=payload.date_range_end,
+        generated_at=datetime.utcnow(),
+        status="generating",
+    )
+    db.add(report)
+    db.commit()
+    db.refresh(report)
+
+    background_tasks.add_task(_run_report_generation, report.id, db)
+
+    return report
+
+
+@router.get("/reports/{report_id}", response_model=ComplianceReportOut)
+def get_report(report_id: int, db: Session = Depends(get_db)):
+    report = db.query(ComplianceReport).filter(ComplianceReport.id == report_id).first()
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+    return report
+
+
+@router.get("/reports/{report_id}/download")
+def download_report(report_id: int, db: Session = Depends(get_db)):
+    report = db.query(ComplianceReport).filter(ComplianceReport.id == report_id).first()
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+    if report.status != "ready":
+        raise HTTPException(status_code=409, detail=f"Report is not ready (status: {report.status})")
+    if not report.file_path or not os.path.exists(report.file_path):
+        raise HTTPException(status_code=404, detail="Report file not found on disk")
+
+    filename = f"SentinelOps_{report.framework}_Report.pdf"
+    return FileResponse(
+        path=report.file_path,
+        media_type="application/pdf",
+        filename=filename,
+    )
+
+
+@router.delete("/reports/{report_id}", status_code=204)
+def delete_report(report_id: int, db: Session = Depends(get_db)):
+    report = db.query(ComplianceReport).filter(ComplianceReport.id == report_id).first()
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+
+    if report.file_path and os.path.exists(report.file_path):
+        try:
+            os.remove(report.file_path)
+        except OSError:
+            pass
+
+    db.delete(report)
+    db.commit()

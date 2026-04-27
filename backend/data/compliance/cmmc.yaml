@@ -1,0 +1,29 @@
+framework: CMMC
+title: "CMMC Level 2 Compliance Report"
+version: "2.0"
+controls:
+  - id: AC.L1-3.1.1
+    name: "Authorized Access Control"
+    category: "Access Control"
+    description: "Limit information system access to authorized users."
+    evidence_source: "Asset inventory and access monitoring in /assets"
+  - id: AU.L2-3.3.1
+    name: "System Auditing"
+    category: "Audit and Accountability"
+    description: "Create and retain system audit logs."
+    evidence_source: "Alert logs in /alerts with full audit trail"
+  - id: IR.L2-3.6.1
+    name: "Incident Handling"
+    category: "Incident Response"
+    description: "Establish an operational incident-handling capability."
+    evidence_source: "Threat management workflow in /threats"
+  - id: SI.L1-3.14.1
+    name: "Flaw Remediation"
+    category: "System and Information Integrity"
+    description: "Identify, report, and correct information and information system flaws."
+    evidence_source: "Vulnerable asset tracking, threat resolution in /assets and /threats"
+  - id: SI.L2-3.14.6
+    name: "Security Alerts"
+    category: "System and Information Integrity"
+    description: "Monitor the information system to detect attacks."
+    evidence_source: "Real-time alert monitoring with MITRE ATT&CK classification"

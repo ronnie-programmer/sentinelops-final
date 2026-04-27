@@ -1,0 +1,34 @@
+framework: NIST
+title: "NIST SP 800-53 Compliance Report"
+version: "Rev 5"
+controls:
+  - id: AC-2
+    name: "Account Management"
+    category: "Access Control"
+    description: "Manage information system accounts."
+    evidence_source: "User entity tracking in /assets, authentication threat detection"
+  - id: AU-2
+    name: "Event Logging"
+    category: "Audit and Accountability"
+    description: "Identify the types of events that the system is capable of logging."
+    evidence_source: "Alert logs with source, severity, and timestamp in /alerts"
+  - id: IR-4
+    name: "Incident Handling"
+    category: "Incident Response"
+    description: "Implement an incident handling capability."
+    evidence_source: "Threat status lifecycle (Open → Investigating → Resolved) in /threats"
+  - id: IR-6
+    name: "Incident Reporting"
+    category: "Incident Response"
+    description: "Require personnel to report suspected incidents."
+    evidence_source: "Slack/PagerDuty notification dispatch logs in /notifications"
+  - id: SI-3
+    name: "Malicious Code Protection"
+    category: "System and Information Integrity"
+    description: "Implement malicious code protection mechanisms."
+    evidence_source: "Malware threat detections, CrowdStrike/integration alerts"
+  - id: SI-4
+    name: "System Monitoring"
+    category: "System and Information Integrity"
+    description: "Monitor the information system."
+    evidence_source: "Integration polling (CrowdStrike, Datadog, Splunk) status in /integrations"

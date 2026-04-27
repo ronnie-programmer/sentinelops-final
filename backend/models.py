@@ -164,3 +164,17 @@ class IOC(Base):
     last_enriched_at = Column(DateTime, nullable=True)
     source_alert_id = Column(Integer, ForeignKey("alert_logs.id"), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class ComplianceReport(Base):
+    __tablename__ = "compliance_reports"
+    id = Column(Integer, primary_key=True, index=True)
+    framework = Column(String(20), nullable=False)   # SOC2, HIPAA, NIST, CMMC
+    date_range_start = Column(DateTime, nullable=False)
+    date_range_end = Column(DateTime, nullable=False)
+    generated_at = Column(DateTime, default=datetime.utcnow)
+    file_path = Column(String(500), nullable=True)
+    status = Column(String(20), default="generating")  # generating, ready, error
+    alert_count = Column(Integer, default=0)
+    threat_count = Column(Integer, default=0)
+    error_message = Column(Text, nullable=True)
