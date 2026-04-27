@@ -1,5 +1,6 @@
 import logging
 from fastapi import APIRouter, Depends, BackgroundTasks, HTTPException
+from pydantic import BaseModel
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 from typing import List
@@ -11,6 +12,8 @@ from schemas import IntegrationOut, IntegrationToggle
 from integrations.crowdstrike import CrowdStrikeAdapter
 from integrations.datadog import DatadogAdapter
 from integrations.splunk import SplunkAdapter
+from integrations.edr.crowdstrike_insight import CrowdStrikeInsightAdapter
+from integrations.edr.sentinelone import SentinelOneAdapter
 from integrations.scheduler import _poll_integration
 
 logger = logging.getLogger(__name__)
@@ -20,6 +23,13 @@ ADAPTERS = {
     "crowdstrike": CrowdStrikeAdapter,
     "datadog": DatadogAdapter,
     "splunk": SplunkAdapter,
+    "crowdstrike_insight": CrowdStrikeInsightAdapter,
+    "sentinelone": SentinelOneAdapter,
+}
+
+EDR_ADAPTERS = {
+    "crowdstrike_insight": CrowdStrikeInsightAdapter,
+    "sentinelone": SentinelOneAdapter,
 }
 
 
@@ -89,3 +99,51 @@ def get_integration_alerts(source: str = None, limit: int = 50, db: Session = De
             or_(*[AlertLog.message.like(f"[{p.upper()}]%") for p in providers])
         )
     return query.order_by(AlertLog.created_at.desc()).limit(limit).all()
+
+
+class IsolateHostBody(BaseModel):
+    hostname: str
+    device_id: str = ""
+
+
+class KillProcessBody(BaseModel):
+    agent_id: str
+    process_id: int
+
+
+@router.get("/edr/actions")
+def list_edr_actions():
+    return {
+        "actions": [
+            {
+                "provider": "crowdstrike_insight",
+                "action": "isolate_host",
+                "description": "Isolate a host via Falcon RTR API",
+                "params": ["hostname", "device_id (optional)"],
+            },
+            {
+                "provider": "sentinelone",
+                "action": "kill_process",
+                "description": "Kill a process on an endpoint via SentinelOne Remote Script Orchestration",
+                "params": ["agent_id", "process_id"],
+            },
+        ]
+    }
+
+
+@router.post("/edr/{provider}/isolate")
+def edr_isolate_host(provider: str, body: IsolateHostBody):
+    if provider not in EDR_ADAPTERS or provider != "crowdstrike_insight":
+        raise HTTPException(status_code=404, detail="EDR provider not found or does not support isolate_host")
+    adapter = CrowdStrikeInsightAdapter()
+    result = adapter.isolate_host(body.hostname, body.device_id)
+    return result
+
+
+@router.post("/edr/{provider}/kill-process")
+def edr_kill_process(provider: str, body: KillProcessBody):
+    if provider not in EDR_ADAPTERS or provider != "sentinelone":
+        raise HTTPException(status_code=404, detail="EDR provider not found or does not support kill_process")
+    adapter = SentinelOneAdapter()
+    result = adapter.kill_process(body.agent_id, body.process_id)
+    return result
