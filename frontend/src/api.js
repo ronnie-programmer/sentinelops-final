@@ -49,11 +49,4 @@ export const intelApi = {
   delete: (id) => api.delete(`/intel/${id}`),
 }
 
-export const mlApi = {
-  getStatus: () => api.get('/ml/status'),
-  train: () => api.post('/ml/train'),
-  getPredictions: () => api.get('/ml/predictions'),
-  getAnomalies: () => api.get('/ml/anomalies'),
-}
-
 export default api
