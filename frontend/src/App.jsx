@@ -13,6 +13,7 @@ import MitreMatrix from './pages/MitreMatrix'
 import Integrations from './pages/Integrations'
 import IOCs from './pages/IOCs'
 import Playbooks from './pages/Playbooks'
+import UEBA from './pages/UEBA'
 
 export default function App() {
   return (
@@ -34,6 +35,7 @@ export default function App() {
             <Route path="/integrations" element={<Integrations />} />
             <Route path="/iocs" element={<IOCs />} />
             <Route path="/playbooks" element={<Playbooks />} />
+            <Route path="/ueba" element={<UEBA />} />
           </Routes>
         </main>
       </div>

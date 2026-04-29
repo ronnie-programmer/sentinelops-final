@@ -87,6 +87,15 @@ export const complianceReportsApi = {
   delete: (id) => api.delete(`/compliance/reports/${id}`),
 }
 
+export const uebaApi = {
+  getStats: () => api.get('/ueba/stats'),
+  getUsers: () => api.get('/ueba/users'),
+  getUser: (id) => api.get(`/ueba/users/${id}`),
+  getAnomalies: (params) => api.get('/ueba/anomalies', { params }),
+  setAnomalyStatus: (id, status) => api.post(`/ueba/anomalies/${id}/status`, { status }),
+  recompute: () => api.post('/ueba/recompute'),
+}
+
 export const playbooksApi = {
   getAll: () => api.get('/playbooks/'),
   create: (data) => api.post('/playbooks/', data),

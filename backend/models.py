@@ -208,3 +208,50 @@ class PlaybookRun(Base):
     completed_at = Column(DateTime, nullable=True)
 
     playbook = relationship("Playbook", back_populates="runs")
+
+
+# ----- UEBA -----
+
+class UEBAUser(Base):
+    """A monitored identity (user account, service account)."""
+    __tablename__ = "ueba_users"
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String(100), nullable=False, unique=True)
+    department = Column(String(100), nullable=True)
+    role = Column(String(100), nullable=True)
+    is_privileged = Column(Integer, default=0)
+    baseline_json = Column(Text, nullable=True)        # JSON: per-feature {mean, std, n}
+    baseline_updated_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
+class UEBAEvent(Base):
+    """A raw activity event observed for a user. Source data for both the
+    baseline computation and anomaly scoring."""
+    __tablename__ = "ueba_events"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("ueba_users.id"), nullable=False)
+    event_type = Column(String(50), nullable=False)    # login, login_failed, file_access, command, vpn
+    occurred_at = Column(DateTime, nullable=False, index=True)
+    source_ip = Column(String(45), nullable=True)
+    resource = Column(String(200), nullable=True)
+    after_hours = Column(Integer, default=0)           # 1 if outside 06:00-22:00 local
+    is_privileged_action = Column(Integer, default=0)
+    metadata_json = Column(Text, nullable=True)
+
+
+class UEBAAnomaly(Base):
+    """A detected behavioral anomaly. Score is the maximum |z-score| across
+    features plus rule bonuses; severity is bucketed off score."""
+    __tablename__ = "ueba_anomalies"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("ueba_users.id"), nullable=False)
+    detected_at = Column(DateTime, default=datetime.utcnow, index=True)
+    window_start = Column(DateTime, nullable=False)
+    window_end = Column(DateTime, nullable=False)
+    score = Column(Integer, default=0)                 # 0-100 normalized
+    severity = Column(String(20), default="LOW")       # CRITICAL, HIGH, MEDIUM, LOW
+    status = Column(String(20), default="Open")        # Open, Investigating, Resolved, False Positive
+    contributing_features = Column(Text, nullable=True) # JSON: [{feature, value, mean, std, z, rule_bonus}]
+    summary = Column(Text, nullable=True)
+    resolved_at = Column(DateTime, nullable=True)

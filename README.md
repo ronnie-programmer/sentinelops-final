@@ -20,6 +20,7 @@ A full-stack Security Operations Center (SOC) dashboard. Tracks threats, alerts,
 - **Dashboard** — live stats, 7-day threat trend, breakdown by type
 - **Integrations** — CrowdStrike, Datadog, and Splunk adapters with automatic mock mode and background polling
 - **EDR adapters** — CrowdStrike Falcon Insight and SentinelOne Singularity with response actions (isolate host, kill process)
+- **UEBA** — per-user behavioral baselines and anomaly scoring (statistical, no ML)
 
 ## Feature: MITRE ATT&CK Mapping
 
@@ -419,6 +420,70 @@ CROWDSTRIKE_INSIGHT_CLIENT_SECRET=    # falls back to CROWDSTRIKE_CLIENT_SECRET
 SENTINELONE_API_KEY=
 SENTINELONE_MANAGEMENT_URL=https://usea1.sentinelone.net
 ```
+
+---
+
+## Feature: User & Entity Behavior Analytics (UEBA)
+
+UEBA tracks per-user behavioral baselines and flags days that deviate from those baselines. The implementation is **deliberately statistical** — pure mean/std z-scores plus rule bonuses, no machine learning libraries. SentinelOps stays non-ML by design (predictive maintenance work belongs in `shiplogix-final`); UEBA fits because behavioral anomaly detection runs perfectly well on classic statistics for this scale.
+
+### Data model
+
+| Table | Purpose |
+|---|---|
+| `ueba_users` | One row per monitored identity, with `baseline_json` (means/std per feature) refreshed daily |
+| `ueba_events` | Raw activity events (login, login_failed, file_access, command) — source data for both baseline and scoring |
+| `ueba_anomalies` | Detected anomalies — score 0-100, severity bucket, contributing-feature breakdown, status workflow |
+
+### Features tracked per user-day
+
+- `login_count` — successful logins
+- `failed_login_count` — failed authentications
+- `unique_source_ips` — distinct source IPs observed
+- `after_hours_count` — events outside 06:00-22:00
+- `privileged_count` — privileged commands / admin actions
+- `distinct_resources` — distinct resources/files touched
+
+### Scoring
+
+For each feature: `weighted_z = |observed - mean| / std × feature_weight`, mapped onto a 0-100 axis. The day's score is the **max** weighted z-score plus rule bonuses:
+- +15 for any login from an IP not seen in the user's 30-day history
+- +10 for ≥3 failed logins on a privileged account
+- +10 for any after-hours activity on a sensitive role (finance, executive, hr)
+
+Severity buckets: 80+ CRITICAL, 60+ HIGH, 40+ MEDIUM, below LOW. Anomalies below 40 are not persisted.
+
+### Baseline rebuild
+
+Baselines are recomputed:
+- On startup, after the seeder bootstraps 30 days of synthetic events for 8 users
+- Once every 24 hours by the APScheduler job registered in `backend/ueba/scheduler.py`
+- On demand via `POST /api/ueba/recompute`
+
+The trailing baseline window is 30 days. If a user has fewer than 5 days of history their baseline is flagged `low_confidence` so the UI can surface the caveat.
+
+### React page (`/ueba`)
+
+- Stat cards: monitored users, events indexed, open anomalies, last baseline run
+- Severity breakdown of open anomalies
+- **Anomaly Events** table — filterable by severity and status, expandable rows show per-feature contributions (observed, baseline mean, std, z-score, score)
+- **Monitored Users** table — username, role/dept, privileged flag, open anomaly count, max recent score with bar
+- User detail drawer — full baseline + recent anomalies, click any user row to open
+
+### API endpoints (UEBA)
+
+| Method | Path | Purpose |
+|---|---|---|
+| GET | /api/ueba/stats | User count, event count, open anomalies grouped by severity |
+| GET | /api/ueba/users | Per-user summary with open anomaly count and 7-day max score |
+| GET | /api/ueba/users/{id} | User detail: baseline, recent event count, last 10 anomalies |
+| GET | /api/ueba/anomalies | All anomalies, filterable by `severity` and `status` |
+| POST | /api/ueba/anomalies/{id}/status | Update anomaly status (Open / Investigating / Resolved / False Positive) |
+| POST | /api/ueba/recompute | Force baseline rebuild + anomaly detection cycle |
+
+### Why statistical, not ML?
+
+ML libraries (sklearn, xgboost, etc.) bring weight, model artifacts, training pipelines, and silent drift. For per-user behavioral monitoring at SOC scale a robust z-score against a rolling 30-day baseline is well-known to be competitive with isolation forests / autoencoders, and it's auditable: every score has a fully-explainable contribution breakdown that an analyst can inspect without opening a notebook. A test (`test_no_sklearn_imports_in_ueba_package`) enforces this: importing the UEBA package must not pull in any ML library.
 
 ---
 
