@@ -93,6 +93,12 @@ def start_scheduler(db_factory, poll_interval_minutes: int = 5):
     logger.info("Integration scheduler started (interval: %d min)", poll_interval_minutes)
 
 
+def get_scheduler() -> AsyncIOScheduler | None:
+    """Expose the running scheduler so other subsystems (UEBA, etc.) can
+    register additional jobs on the same APScheduler instance."""
+    return _scheduler
+
+
 def stop_scheduler():
     global _scheduler
     if _scheduler and _scheduler.running:
