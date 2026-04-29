@@ -19,6 +19,7 @@ A full-stack Security Operations Center (SOC) dashboard. Tracks threats, alerts,
 - **Compliance** — NIST 800-53 and SOC 2 control status with CSV export
 - **Dashboard** — live stats, 7-day threat trend, breakdown by type
 - **Integrations** — CrowdStrike, Datadog, and Splunk adapters with automatic mock mode and background polling
+- **EDR adapters** — CrowdStrike Falcon Insight and SentinelOne Singularity with response actions (isolate host, kill process)
 
 ## Feature: MITRE ATT&CK Mapping
 
@@ -375,6 +376,49 @@ JIRA_PROJECT_KEY=SENTOPS
 1. Create `backend/playbooks/handlers/my_action.py` with an `execute(params, context) -> str` function.
 2. Import it and add it to `HANDLERS` in `backend/playbooks/engine.py`.
 3. Use it in a playbook's `actions_yaml`: `- action: my_action`.
+
+---
+
+## Feature: EDR Adapters (CrowdStrike Insight + SentinelOne)
+
+The base CrowdStrike adapter under `/integrations` ingests Falcon detection summaries — useful for triage, but limited. The EDR adapters surface deeper endpoint telemetry (process injection, credential dumping, fileless execution, lateral movement, ransomware behavior) and add **response actions** that issue commands back to the EDR platform: isolate a host from the network, or kill a malicious process by PID.
+
+### Providers
+
+| Provider | Vendor | API surface | Response actions |
+|---|---|---|---|
+| `crowdstrike_insight` | CrowdStrike Falcon Insight | `/incidents` + Real-Time Response | `contain` (isolate), RTR `kill` |
+| `sentinelone` | SentinelOne Singularity | `/web/api/v2.1/threats` | `agents/actions/disconnect`, `threats/mitigate/kill` |
+
+### Mock mode
+
+Both adapters fall back to mock mode automatically when their credentials are unset, so the platform is fully demoable with no vendor accounts. Mock alerts cover MITRE-tagged scenarios (T1055 process injection, T1003.001 LSASS credential access, T1059.001 in-memory PowerShell, T1047 WMI lateral movement, T1562.001 EDR tampering, ransomware encryption rate, T1053.005 scheduled-task persistence). Response actions in mock mode log the call and return a `[MOCK]` confirmation string.
+
+### Frontend
+
+`/integrations` now groups adapters into two sections — **SIEM & Cloud Security** (CrowdStrike, Datadog, Splunk) and **Endpoint Detection & Response** (CrowdStrike Insight, SentinelOne). Each EDR card exposes an inline panel for the response actions: enter a host/agent ID, optionally a process ID, and click **Isolate Host** or **Kill Process**. Action results appear as a banner at the top of the page.
+
+### API endpoints (EDR)
+
+| Method | Path | Purpose |
+|---|---|---|
+| POST | /api/integrations/{provider}/isolate | Body `{host_id}` — network-quarantine a host |
+| POST | /api/integrations/{provider}/kill-process | Body `{host_id, process_id}` — terminate a process |
+
+The endpoints return 400 when called against a non-EDR provider (datadog/splunk/crowdstrike) and 502 when the upstream API call fails.
+
+### Playbook integration
+
+The built-in `isolate_host` SOAR action handler now dispatches to the EDR adapters: pass `provider: sentinelone` (default `crowdstrike_insight`) and a `host_id` (or fall back to `affected_system`) and the handler will issue a real network quarantine command — or a mock confirmation when no credentials are set.
+
+### Environment variables (EDR)
+
+```
+CROWDSTRIKE_INSIGHT_CLIENT_ID=        # falls back to CROWDSTRIKE_CLIENT_ID
+CROWDSTRIKE_INSIGHT_CLIENT_SECRET=    # falls back to CROWDSTRIKE_CLIENT_SECRET
+SENTINELONE_API_KEY=
+SENTINELONE_MANAGEMENT_URL=https://usea1.sentinelone.net
+```
 
 ---
 

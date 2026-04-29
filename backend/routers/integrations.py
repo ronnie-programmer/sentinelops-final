@@ -1,5 +1,6 @@
 import logging
 from fastapi import APIRouter, Depends, BackgroundTasks, HTTPException
+from pydantic import BaseModel
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 from typing import List
@@ -11,6 +12,9 @@ from schemas import IntegrationOut, IntegrationToggle
 from integrations.crowdstrike import CrowdStrikeAdapter
 from integrations.datadog import DatadogAdapter
 from integrations.splunk import SplunkAdapter
+from integrations.edr.crowdstrike_insight import CrowdStrikeInsightAdapter
+from integrations.edr.sentinelone import SentinelOneAdapter
+from integrations.edr.base import EDRAdapter
 from integrations.scheduler import _poll_integration
 
 logger = logging.getLogger(__name__)
@@ -20,7 +24,11 @@ ADAPTERS = {
     "crowdstrike": CrowdStrikeAdapter,
     "datadog": DatadogAdapter,
     "splunk": SplunkAdapter,
+    "crowdstrike_insight": CrowdStrikeInsightAdapter,
+    "sentinelone": SentinelOneAdapter,
 }
+
+EDR_PROVIDERS = {"crowdstrike_insight", "sentinelone"}
 
 
 def _ensure_integrations(db: Session):
@@ -89,3 +97,42 @@ def get_integration_alerts(source: str = None, limit: int = 50, db: Session = De
             or_(*[AlertLog.message.like(f"[{p.upper()}]%") for p in providers])
         )
     return query.order_by(AlertLog.created_at.desc()).limit(limit).all()
+
+
+# ----- EDR response actions -----
+
+class EDRIsolateRequest(BaseModel):
+    host_id: str
+
+
+class EDRKillProcessRequest(BaseModel):
+    host_id: str
+    process_id: str
+
+
+@router.post("/{provider}/isolate")
+def edr_isolate_host(provider: str, body: EDRIsolateRequest):
+    if provider not in EDR_PROVIDERS:
+        raise HTTPException(status_code=400, detail=f"{provider} does not support isolation")
+    adapter_class = ADAPTERS[provider]
+    adapter = adapter_class()
+    if not isinstance(adapter, EDRAdapter):
+        raise HTTPException(status_code=500, detail="adapter is not an EDR adapter")
+    result = adapter.isolate_host(body.host_id)
+    if not result.get("ok"):
+        raise HTTPException(status_code=502, detail=result.get("message", "isolation failed"))
+    return {"provider": provider, **result}
+
+
+@router.post("/{provider}/kill-process")
+def edr_kill_process(provider: str, body: EDRKillProcessRequest):
+    if provider not in EDR_PROVIDERS:
+        raise HTTPException(status_code=400, detail=f"{provider} does not support process kill")
+    adapter_class = ADAPTERS[provider]
+    adapter = adapter_class()
+    if not isinstance(adapter, EDRAdapter):
+        raise HTTPException(status_code=500, detail="adapter is not an EDR adapter")
+    result = adapter.kill_process(body.host_id, body.process_id)
+    if not result.get("ok"):
+        raise HTTPException(status_code=502, detail=result.get("message", "kill failed"))
+    return {"provider": provider, **result}

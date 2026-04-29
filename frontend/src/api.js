@@ -67,6 +67,8 @@ export const integrationsApi = {
   toggle: (provider, enabled) => api.post(`/integrations/${provider}/toggle`, { enabled }),
   pollNow: (provider) => api.post(`/integrations/${provider}/poll`),
   getAlerts: (source) => api.get('/integrations/alerts', { params: source ? { source } : {} }),
+  isolate: (provider, host_id) => api.post(`/integrations/${provider}/isolate`, { host_id }),
+  killProcess: (provider, host_id, process_id) => api.post(`/integrations/${provider}/kill-process`, { host_id, process_id }),
 }
 
 export const iocApi = {
