@@ -68,10 +68,19 @@ def start_scheduler(db_factory, poll_interval_minutes: int = 5):
     from integrations.crowdstrike import CrowdStrikeAdapter
     from integrations.datadog import DatadogAdapter
     from integrations.splunk import SplunkAdapter
+    from integrations.edr.crowdstrike_insight import CrowdStrikeInsightAdapter
+    from integrations.edr.sentinelone import SentinelOneAdapter
 
     _scheduler = AsyncIOScheduler()
 
-    for adapter_class in [CrowdStrikeAdapter, DatadogAdapter, SplunkAdapter]:
+    adapter_classes = [
+        CrowdStrikeAdapter,
+        DatadogAdapter,
+        SplunkAdapter,
+        CrowdStrikeInsightAdapter,
+        SentinelOneAdapter,
+    ]
+    for adapter_class in adapter_classes:
         _scheduler.add_job(
             _poll_integration,
             trigger=IntervalTrigger(minutes=poll_interval_minutes),
