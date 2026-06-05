@@ -425,7 +425,7 @@ SENTINELONE_MANAGEMENT_URL=https://usea1.sentinelone.net
 
 ## Feature: User & Entity Behavior Analytics (UEBA)
 
-UEBA tracks per-user behavioral baselines and flags days that deviate from those baselines. The implementation is **deliberately statistical** — pure mean/std z-scores plus rule bonuses, no machine learning libraries. SentinelOps stays non-ML by design (predictive maintenance work belongs in `shiplogix-final`); UEBA fits because behavioral anomaly detection runs perfectly well on classic statistics for this scale.
+UEBA tracks per-user behavioral baselines and flags days that deviate from those baselines. The implementation is **deliberately statistical** — pure mean/std z-scores plus rule bonuses, no machine learning libraries. SentinelOps stays non-ML by design (predictive-maintenance ML work lives in IronSight); UEBA fits because behavioral anomaly detection runs perfectly well on classic statistics for this scale.
 
 ### Data model
 
